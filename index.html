@@ -1,0 +1,143 @@
+<!--
+ *  Copyright (c) Facebook, Inc.
+ *  All rights reserved.
+ *
+ *  This source code is licensed under the license found in the
+ *  LICENSE file in the root directory of this source tree.
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Elm GraphQL Workshop</title>
+    <style>
+      body {
+        height: 100%;
+        margin: 0;
+        width: 100%;
+      }
+      #graphiql {
+        height: 100vh;
+      }
+      .CodeMirror { height: 100% !important; }
+      .editorWrap {
+        overflow: hidden;
+      }
+    </style>
+
+    <!--
+      This GraphiQL example depends on Promise and fetch, which are available in
+      modern browsers, but can be "polyfilled" for older browsers.
+      GraphiQL itself depends on React DOM.
+      If you do not want to rely on a CDN, you can host these files locally or
+      include them directly in your favored resource bunder.
+    -->
+    <script src="//cdn.jsdelivr.net/es6-promise/4.0.5/es6-promise.auto.min.js"></script>
+    <script src="//cdn.jsdelivr.net/fetch/0.9.0/fetch.min.js"></script>
+    <script src="//cdn.jsdelivr.net/react/15.4.2/react.min.js"></script>
+    <script src="//cdn.jsdelivr.net/react/15.4.2/react-dom.min.js"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Raleway:300,300i,400,400i,500,500i,600" rel="stylesheet">
+
+
+
+    <link rel="stylesheet" href="/lib/codemirror.css">
+    <script src="/lib/codemirror.js"></script>
+    <script src="/lib/elm.js"></script>
+    <style>.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
+
+
+    <!--
+      These two files can be found in the npm module, however you may wish to
+      copy them directly into your environment, or perhaps include them in your
+      favored resource bundler.
+     -->
+    <link rel="stylesheet" href="./node_modules/graphiql/graphiql.css" />
+    <script src="./node_modules/graphiql/graphiql.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <div style="height: 400px; display: flex; flex-direction: row; flex-wrap: wrap;">
+      <div id="graphiql" style="height: 100%; display: flex; flex-direction: column; flex-basis: 100%; flex: 2;">Loading...</div>
+      <div style="height: 100%; display: flex; flex-direction: column; flex-basis: 100%; flex: 1;">
+        <textarea name="code" id="elm-data" style="height: 100%; width: 100%; float: left">Loading Elm Data...</textarea>
+      </div>
+    </div>
+    <div id="elm">Loading...</div>
+    <script>
+      function renderGraphiql(elmGraphqlConfig) {
+        console.log('setting to', elmGraphqlConfig.response);
+        window.elmData.setValue(elmGraphqlConfig.response)
+        // When the query and variables string is edited, update the URL bar so
+        // that it can be easily shared
+        function onEditQuery(newQuery) {
+          // parameters.query = newQuery;
+          // updateURL();
+        }
+
+        function graphQLFetcher(graphQLParams) {
+          return fetch("/api", {
+            method: "post",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(graphQLParams),
+            credentials: "include"
+          })
+            .then(function(response) {
+              return response.text();
+            })
+            .then(function(responseBody) {
+              try {
+                return JSON.parse(responseBody);
+              } catch (error) {
+                return responseBody;
+              }
+            });
+        }
+
+        const logo =
+        React.createElement(
+          GraphiQL.Logo,
+          null,
+          React.createElement('img', {
+           src: "https://cdn.jsdelivr.net/gh/martimatix/logo-graphqelm/logo.svg",
+           alt: "dillonearns/elm-graphql logo",
+           height: '35px'
+          }) )
+
+        // Render <GraphiQL /> into the body.
+        // See the README in the top level of this module to learn more about
+        // how you can customize GraphiQL by providing different values or
+        // additional child elements.
+        ReactDOM.render(
+          React.createElement(GraphiQL, {
+            fetcher: graphQLFetcher,
+            query: elmGraphqlConfig.query,
+            variables: null,
+            operationName: null,
+            onEditQuery: onEditQuery,
+            onEditVariables: null,
+            onEditOperationName: null
+          }          , logo
+),
+          document.getElementById("graphiql")
+        );
+      }
+    </script>
+    <script src="/elm.js"></script>
+    <script>
+      window.elmData = CodeMirror.fromTextArea(document.getElementById("elm-data"), {
+        lineNumbers: false,
+        mode: "text/x-elm",
+        theme: 'graphiql'
+      });
+      const app = Elm.Main.init({node: document.getElementById('elm')})
+      app.ports.setupGraphiql.subscribe(config => {
+        renderGraphiql(config)
+      })
+    </script>
+
+
+
+  </body>
+</html>
